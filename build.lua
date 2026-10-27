@@ -1,5 +1,5 @@
 -- build script for xmake
-local package_path = vformat("$(buildir)/package")
+local package_path = vformat("$(builddir)/package")
 
 -- embed settings
 local embeds_path = "src/Installer/embeds"
@@ -10,6 +10,27 @@ local embed_files = {
   "README.md",
   "README_zh.md",
 }
+
+function FixGeneratedEmbedSources()
+  local generated_sources = {
+    "src/Installer/embeds/lua/EmbedFileManager_Lua.cpp",
+    "src/Installer/embeds/lua/EmbedFileManager_LooseFiles.cpp",
+    "src/Installer/embeds/red4ext/EmbedFileManager_Red4ExtPlugin.cpp",
+  }
+
+  for _, source_path in ipairs(generated_sources) do
+    local file = assert(io.open(source_path, "rb"), "can't open generated source " .. source_path)
+    local content = file:read("*a")
+    file:close()
+    local cleaned_content = content:gsub("// test for C:\\[ \t]*", "// test for C: root")
+
+    if cleaned_content ~= content then
+      file = assert(io.open(source_path, "wb"), "can't write generated source " .. source_path)
+      file:write(cleaned_content)
+      file:close()
+    end
+  end
+end
 
 local function check_game_installation(install_path)
   assert(install_path, format("Install path not set.\n\tUse the follow command to set install path:\n\txmake f --installpath=%s", [["C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077"]]))
